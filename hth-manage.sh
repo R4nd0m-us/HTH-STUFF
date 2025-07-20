@@ -2,7 +2,7 @@
 
 ################################################################################
 # hth-manage.sh - Helpthehomeless Wallet Management Script
-# Version: 1.5
+# Version: 1.8
 # Description: Deploys a super simple Peer - Bloom enabled wallet designed for a single core VPS so it uses cpulimit to limit the wallet to 10% of CPU
 # Adds ipv4 and ipv6 peers for the wallet in the config
 # Installs everything needed to use the pre-built wallet.
@@ -250,7 +250,7 @@ update_packages() {
 apt_install() {
     local package="$1"
     echo -e "${CYAN}Installing $package...${COL_RESET}"
-    # Switched to apt-get for more consistent non-interactive behavior
+    # Directly execute apt-get install to show output for debugging potential hangs
     sudo apt-get install -y "$package"
     local exit_code=$?
     if [[ $exit_code -eq 0 ]]; then
@@ -270,10 +270,15 @@ apt_install() {
 show_banner() {
     clear
     echo
-    # Ensure figlet and lolcat are installed before using them
-    if command -v figlet &> /dev/null && command -v lolcat &> /dev/null; then
-        figlet -f slant -w 80 "HTH Manager By R4ndom.us" | lolcat -f -a -s 100 -t
+    if command -v figlet &> /dev/null; then
+        if command -v lolcat &> /dev/null; then
+            figlet -f slant -w 80 "HTH Manager" | lolcat -f -a -s 100 -t
+        else
+            # lolcat not found, use figlet without color
+            figlet -f slant -w 80 "HTH Manager"
+        fi
     else
+        # Neither figlet nor lolcat found, use simple echo
         echo -e "${CYAN}### HTH Manager ###${COL_RESET}"
     fi
     echo
@@ -569,7 +574,7 @@ configure_github_hosts_entries() {
     # Backup existing hosts file
     if [[ -f "$hosts_file" ]]; then
         sudo cp "$hosts_file" "$hosts_backup"
-        info_log "Backed up $hosts_file to $hosts_backup"
+        info_log "Backed up $hosts_file to $hosts_conf_backup"
     else
         info_log "$hosts_file does not exist, no backup needed."
     fi
