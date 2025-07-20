@@ -381,6 +381,51 @@ EOF
     fi
 }
 
+# Function to download a file with retries and IPv4/IPv6 preference
+download_file_robustly() {
+    local url="$1"
+    local output_path="$2"
+    local download_status=1 # Assume failure
+
+    echo -e "${CYAN}Attempting to download from ${url} using curl...${COL_RESET}"
+    hide_output curl -L -o "$output_path" "$url"
+    download_status=$?
+
+    if [ "$download_status" -ne 0 ]; then
+        echo -e "${YELLOW}Curl failed. Retrying with curl -4...${COL_RESET}"
+        hide_output curl -L -4 -o "$output_path" "$url"
+        download_status=$?
+    fi
+
+    if [ "$download_status" -ne 0 ]; then
+        echo -e "${YELLOW}Curl -4 failed. Retrying with curl -6...${COL_RESET}"
+        hide_output curl -L -6 -o "$output_path" "$url"
+        download_status=$?
+    fi
+
+    if [ "$download_status" -ne 0 ]; then
+        echo -e "${YELLOW}All curl attempts failed. Falling back to wget...${COL_RESET}"
+        echo -e "${CYAN}Attempting to download from ${url} using wget...${COL_RESET}"
+        hide_output wget -q -O "$output_path" "$url"
+        download_status=$?
+    fi
+
+    if [ "$download_status" -ne 0 ]; then
+        echo -e "${YELLOW}Wget failed. Retrying with wget -4...${COL_RESET}"
+        hide_output wget -q -O "$output_path" -4 "$url"
+        download_status=$?
+    fi
+
+    if [ "$download_status" -ne 0 ]; then
+        echo -e "${YELLOW}Wget -4 failed. Retrying with wget -6...${COL_RESET}"
+        hide_output wget -q -O "$output_path" -6 "$url"
+        download_status=$?
+    fi
+
+    return "$download_status"
+}
+
+
 # Function to download and set up the wallet binaries
 setup_wallet_binaries() {
     show_section "Setting Up Wallet Binaries"
@@ -400,12 +445,12 @@ setup_wallet_binaries() {
 
     # Added check for existing binaries to prevent re-downloading
     if [ ! -f "$WALLET_CLI" ] || [ ! -f "$WALLET_DAEMON" ]; then
-        echo -e "${CYAN}Downloading helpthehomeless-cli from ${cli_url}...${COL_RESET}"
-        hide_output curl -L -o "$WALLET_CLI" "$cli_url"
+        echo -e "${CYAN}Downloading helpthehomeless-cli...${COL_RESET}"
+        download_file_robustly "$cli_url" "$WALLET_CLI"
         local cli_download_status=$?
 
-        echo -e "${CYAN}Downloading helpthehomelessd from ${daemon_url}...${COL_RESET}"
-        hide_output curl -L -o "$WALLET_DAEMON" "$daemon_url"
+        echo -e "${CYAN}Downloading helpthehomelessd...${COL_RESET}"
+        download_file_robustly "$daemon_url" "$WALLET_DAEMON"
         local daemon_download_status=$?
     else
         info_log "Wallet binaries already exist. Skipping download."
