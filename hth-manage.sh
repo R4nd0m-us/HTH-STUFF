@@ -124,7 +124,7 @@ install_prerequisites() {
 
     # Check if lolcat is installed
     if ! command -v lolcat &> /dev/null; then
-        apt_install lolcat
+        apt-get install -y lolcat
     else
         info_log "lolcat already installed"
     fi
