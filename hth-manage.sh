@@ -383,42 +383,44 @@ EOF
 
 # Function to download a file with retries and IPv4/IPv6 preference
 download_file_robustly() {
-    local url="$1"
+    local original_url="$1"
     local output_path="$2"
     local download_status=1 # Assume failure
 
-    echo -e "${CYAN}Attempting to download from ${url} using curl...${COL_RESET}"
-    hide_output curl -L -o "$output_path" "$url"
+    local ipv6_mirror_url=$(echo "$original_url" | sed 's/github.com/gh-v6.com/g')
+
+    echo -e "${CYAN}Attempting to download from ${original_url} using curl...${COL_RESET}"
+    hide_output curl -L -o "$output_path" "$original_url"
     download_status=$?
 
     if [ "$download_status" -ne 0 ]; then
         echo -e "${YELLOW}Curl failed. Retrying with curl -4...${COL_RESET}"
-        hide_output curl -L -4 -o "$output_path" "$url"
+        hide_output curl -L -4 -o "$output_path" "$original_url"
         download_status=$?
     fi
 
     if [ "$download_status" -ne 0 ]; then
-        echo -e "${YELLOW}Curl -4 failed. Retrying with curl -6...${COL_RESET}"
-        hide_output curl -L -6 -o "$output_path" "$url"
+        echo -e "${YELLOW}Curl -4 failed. Retrying with curl -6 (using IPv6 mirror)...${COL_RESET}"
+        hide_output curl -L -6 -o "$output_path" "$ipv6_mirror_url"
         download_status=$?
     fi
 
     if [ "$download_status" -ne 0 ]; then
         echo -e "${YELLOW}All curl attempts failed. Falling back to wget...${COL_RESET}"
-        echo -e "${CYAN}Attempting to download from ${url} using wget...${COL_RESET}"
-        hide_output wget -q -O "$output_path" "$url"
+        echo -e "${CYAN}Attempting to download from ${original_url} using wget...${COL_RESET}"
+        hide_output wget -q -O "$output_path" "$original_url"
         download_status=$?
     fi
 
     if [ "$download_status" -ne 0 ]; then
         echo -e "${YELLOW}Wget failed. Retrying with wget -4...${COL_RESET}"
-        hide_output wget -q -O "$output_path" -4 "$url"
+        hide_output wget -q -O "$output_path" -4 "$original_url"
         download_status=$?
     fi
 
     if [ "$download_status" -ne 0 ]; then
-        echo -e "${YELLOW}Wget -4 failed. Retrying with wget -6...${COL_RESET}"
-        hide_output wget -q -O "$output_path" -6 "$url"
+        echo -e "${YELLOW}Wget -4 failed. Retrying with wget -6 (using IPv6 mirror)...${COL_RESET}"
+        hide_output wget -q -O "$output_path" -6 "$ipv6_mirror_url"
         download_status=$?
     fi
 
@@ -431,17 +433,13 @@ setup_wallet_binaries() {
     show_section "Setting Up Wallet Binaries"
     echo "Downloading and setting up Helpthehomeless binaries..."
 
-    local github_base_url="https://github.com"
-    if is_ipv6_only; then
-        github_base_url="https://gh-v6.com"
-        info_log "Detected IPv6-only system, using GitHub mirror: $github_base_url"
-    else
-        info_log "System has IPv4 connectivity, using standard GitHub: $github_base_url"
-    fi
+    # The base URL for initial attempts is always github.com,
+    # and download_file_robustly will handle gh-v6.com for IPv6 specific retries.
+    local original_github_base_url="https://github.com"
 
-    # Construct full download URLs using the determined base URL
-    local cli_url="${github_base_url}/HTHcoin/helpthehomelesscoin/releases/download/0.14.1/helpthehomeless-cli"
-    local daemon_url="${github_base_url}/HTHcoin/helpthehomelesscoin/releases/download/0.14.1/helpthehomelessd"
+    # Construct full download URLs using the original GitHub base URL
+    local cli_url="${original_github_base_url}/HTHcoin/helpthehomelesscoin/releases/download/0.14.1/helpthehomeless-cli"
+    local daemon_url="${original_github_base_url}/HTHcoin/helpthehomelesscoin/releases/download/0.14.1/helpthehomelessd"
 
     # Added check for existing binaries to prevent re-downloading
     if [ ! -f "$WALLET_CLI" ] || [ ! -f "$WALLET_DAEMON" ]; then
