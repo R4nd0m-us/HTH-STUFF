@@ -2,12 +2,12 @@
 
 ################################################################################
 # hth-manage.sh - Helpthehomeless Wallet Management Script
-# Version: 1.8
+# Version: 1.9
 # Description: Deploys a super simple Peer - Bloom enabled wallet designed for a single core VPS so it uses cpulimit to limit the wallet to 10% of CPU
 # Adds ipv4 and ipv6 peers for the wallet in the config
 # Installs everything needed to use the pre-built wallet.
-# Will download the daemon, CLI. Start the Daemon, Cpulimit the Daemon. 
-# Has smarts to handle IPv6 only VPS's so we can still get the files from github (Shame for no IPv6). 
+# Will download the daemon, CLI. Start the Daemon, Cpulimit the Daemon.
+# Has smarts to handle IPv6 only VPS's so we can still get the files from github (Shame for no IPv6).
 # Adds DNS64 if V6 only for help navigating most IPv4 domains.
 # Built for Server versions of Debian 11+ and Ubuntu 20.04+
 #
@@ -17,7 +17,7 @@
 # IPv6 Only use wget https://gh-v6.com/R4nd0m-us/HTH-STUFF/raw/refs/heads/main/hth-manage.sh
 # chmod +x hth-manage.sh
 # ./hth-manage.sh
-# Author: R4nd0m.us AKA Cryptominer937 
+# Author: R4nd0m.us AKA Cryptominer937
 ################################################################################
 
 # Color definitions
@@ -117,42 +117,46 @@ install_prerequisites() {
 
     # Check if figlet is installed
     if ! command -v figlet &> /dev/null; then
-        apt_install figlet
+        if ! apt_install figlet; then # Check return status, do not exit on failure
+            show_warning "figlet installation failed. The banner will be displayed as plain text."
+        fi
     else
         info_log "figlet already installed"
     fi
 
     # Check if lolcat is installed
     if ! command -v lolcat &> /dev/null; then
-        apt-get install -y lolcat
+        if ! apt_install lolcat; then # Check return status, do not exit on failure
+            show_warning "lolcat installation failed. The banner will be displayed without color."
+        fi
     else
         info_log "lolcat already installed"
     fi
 
     # Check if wget is installed
     if ! command -v wget &> /dev/null; then
-        apt_install wget
+        apt_install wget || exit 1 # Exit if wget fails, it's critical for downloads
     else
         info_log "wget already installed"
     fi
 
     # Check if htop is installed
     if ! command -v htop &> /dev/null; then
-        apt_install htop
+        apt_install htop || exit 1 # Exit if htop fails
     else
         info_log "htop already installed"
     fi
 
     # Check if cpulimit is installed
     if ! command -v cpulimit &> /dev/null; then
-        apt_install cpulimit
+        apt_install cpulimit || exit 1 # Exit if cpulimit fails
     else
         info_log "cpulimit already installed"
     fi
 
     # Check if screen is installed
     if ! command -v screen &> /dev/null; then
-        apt_install screen
+        apt_install screen || exit 1 # Exit if screen fails
         screen_was_installed=true
     else
         info_log "screen already installed"
@@ -242,7 +246,7 @@ is_ipv6_only() {
 # Update package lists
 update_packages() {
     echo -e "${CYAN}Updating package lists...${COL_RESET}"
-    hide_output sudo apt update
+    hide_output apt-get update # Changed 'apt update' to 'apt-get update'
     info_log "Package lists updated"
 }
 
@@ -250,16 +254,16 @@ update_packages() {
 apt_install() {
     local package="$1"
     echo -e "${CYAN}Installing $package...${COL_RESET}"
-    # Directly execute apt-get install to show output for debugging potential hangs
-    sudo apt-get install -y "$package"
+    # Execute apt-get install directly, return its exit code
+    apt-get install -y "$package"
     local exit_code=$?
     if [[ $exit_code -eq 0 ]]; then
         info_log "Successfully installed: $package"
     else
         error_log "Failed to install: $package (Exit Code: $exit_code)"
         echo -e "${RED}Installation of $package failed. Please check the output above for errors.${COL_RESET}"
-        exit 1
     fi
+    return "$exit_code" # Return the exit code for the caller to handle
 }
 
 ################################################################################
@@ -574,7 +578,7 @@ configure_github_hosts_entries() {
     # Backup existing hosts file
     if [[ -f "$hosts_file" ]]; then
         sudo cp "$hosts_file" "$hosts_backup"
-        info_log "Backed up $hosts_file to $hosts_conf_backup"
+        info_log "Backed up $hosts_file to $hosts_backup" # Fixed typo here
     else
         info_log "$hosts_file does not exist, no backup needed."
     fi
