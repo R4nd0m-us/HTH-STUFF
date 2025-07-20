@@ -3,10 +3,16 @@
 ################################################################################
 # hth-manage.sh - Helpthehomeless Wallet Management Script
 # Version: 1.5
-# Description: Installs dependencies, configures, downloads, and manages the
-#              Helpthehomeless daemon with CPU limiting in a screen session.
-# Author: CryptoMiner937 (Adapted by Gemini)
-# Usage: ./hth-manage.sh [-go]
+# Description: Deploys a super simple Peer - Bloom enabled wallet designed for a single core VPS so it uses cpulimit to limit the wallet to 10% of CPU
+# Adds ipv4 and ipv6 peers for the wallet in the config
+# Run as root from /root
+# chmod +x hth-manage.sh
+# ./hth-manage.sh
+# Installs everything needed to use the pre-built wallet.
+# Will download the daemon, CLI. Start the Daemon, Cpulimit the Daemon. 
+# Has smarts to handle IPv6 only VPS's so we can still get the files from github (Shame for no IPv6). 
+# Adds DNS64 if V6 only for help navigating most IPv4 domains.
+# Built for Server versions of Debian 11+ and Ubuntu 20.04+
 ################################################################################
 
 # Color definitions
