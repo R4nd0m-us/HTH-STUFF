@@ -5,14 +5,19 @@
 # Version: 1.5
 # Description: Deploys a super simple Peer - Bloom enabled wallet designed for a single core VPS so it uses cpulimit to limit the wallet to 10% of CPU
 # Adds ipv4 and ipv6 peers for the wallet in the config
-# Run as root from /root
-# chmod +x hth-manage.sh
-# ./hth-manage.sh
 # Installs everything needed to use the pre-built wallet.
 # Will download the daemon, CLI. Start the Daemon, Cpulimit the Daemon. 
 # Has smarts to handle IPv6 only VPS's so we can still get the files from github (Shame for no IPv6). 
 # Adds DNS64 if V6 only for help navigating most IPv4 domains.
 # Built for Server versions of Debian 11+ and Ubuntu 20.04+
+#
+# Usage:
+# Run as root from /root
+# wget https://github.com/R4nd0m-us/HTH-STUFF/raw/refs/heads/main/hth-manage.sh
+# IPv6 Only use wget https://gh-v6.com/R4nd0m-us/HTH-STUFF/raw/refs/heads/main/hth-manage.sh
+# chmod +x hth-manage.sh
+# ./hth-manage.sh
+# Author: R4nd0m.us AKA Cryptominer937 
 ################################################################################
 
 # Color definitions
@@ -267,7 +272,7 @@ show_banner() {
     echo
     # Ensure figlet and lolcat are installed before using them
     if command -v figlet &> /dev/null && command -v lolcat &> /dev/null; then
-        figlet -f slant -w 80 "HTH Manager" | lolcat -f -a -s 100 -t
+        figlet -f slant -w 80 "HTH Manager By R4ndom.us" | lolcat -f -a -s 100 -t
     else
         echo -e "${CYAN}### HTH Manager ###${COL_RESET}"
     fi
